@@ -1,0 +1,4 @@
+gocat
+*.tgz
+
+dist/
