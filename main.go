@@ -208,7 +208,7 @@ func main() {
 						fmt.Printf("\n⤏  %s ", tag)
 						c := line.PriorityColor()
 						c.Printf("%s", prio)
-						fmt.Printf(" [%s][%s][%s][%s] ", brand, sdk, serialno, abi)
+						fmt.Printf(" [%s][%s][%s][%s][%s] ", packageName, brand, sdk, serialno, abi)
 						fmt.Printf("\n\n")
 					}
 					fmt.Printf("%s", message)
