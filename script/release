@@ -37,8 +37,8 @@ if [ $? -ne 0 ]; then
         --repo ${REPO} \
         --tag ${TAG} \
         --release-name "${REPO} ${TAG}" \
-        --description "${TAG}" \
-        --pre-release
+        --body "${TAG}" \
+        --prerelease
 fi
 
 
