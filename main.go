@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/leonardoaramaki/gocat/adb"
 	"github.com/leonardoaramaki/gocat/log"
 	"github.com/leonardoaramaki/gocat/ps"
@@ -134,16 +135,30 @@ func main() {
 		filteredTags[tag] = tag
 	}
 
+	knownTags := make(map[string]*color.Color)
+	lastUsed := []*color.Color{
+		color.New(color.FgRed),
+		color.New(color.FgGreen),
+		color.New(color.FgYellow),
+		color.New(color.FgBlue),
+		color.New(color.FgMagenta),
+		color.New(color.FgCyan),
+	}
+
 	brand := adb.GetProp(devices, "ro.product.manufacturer")
 	sdk := adb.GetProp(devices, "ro.build.version.sdk")
 	serialno := adb.GetProp(devices, "ro.serialno")
 	abi := adb.GetProp(devices, "ro.product.cpu.abi")
 
 	adb.Run(devices, func(output string) {
+		var tag, prio, message string
+
 		line := log.NewLine(output)
+		tag = line.Tag
+		message = strings.TrimSpace(line.Message) + "\n"
 
 		// leaving app
-		if line.Tag == "ActivityManager" && strings.HasPrefix(line.Message, "Killing "+pid) {
+		if tag == "ActivityManager" && strings.HasPrefix(line.Message, "Killing "+pid) {
 			pid = pidOf(devices, packageName)
 			for pid == "" {
 				pid = pidOf(packageName, devices)
@@ -151,7 +166,7 @@ func main() {
 		}
 
 		// app got killed
-		if line.Tag == "Process" && line.Message == "Sending signal. PID: "+pid+" SIG: 9" {
+		if tag == "Process" && line.Message == "Sending signal. PID: "+pid+" SIG: 9" {
 			pid = pidOf(devices, packageName)
 			for pid == "" {
 				pid = pidOf(packageName, devices)
@@ -162,13 +177,7 @@ func main() {
 			return
 		}
 
-		var tag, prio, message string
-
-		message = strings.TrimSpace(line.Message) + "\n"
-
 		if !raw {
-			tag = line.Tag
-
 			if len(tag) > 0 && tag[len(tag)-1] == ':' {
 				tag = tag[:len(tag)-1]
 			}
@@ -202,10 +211,18 @@ func main() {
 					lastTag = tag
 				}
 
+				if _, ok := knownTags[tag]; !ok {
+					knownTags[tag] = lastUsed[0]
+				}
+				tagColor := knownTags[tag]
+				lastUsed = lastUsed[1:]
+				lastUsed = append(lastUsed, tagColor)
+
 				// if copy and paste friendly
 				if cp {
 					if tag != "" {
-						fmt.Printf("\n⤏  %s ", tag)
+						fmt.Printf("\n⤏  ")
+						tagColor.Printf("%s ", tag)
 						c := line.PriorityColor()
 						c.Printf("%s", prio)
 						fmt.Printf(" [%s][%s][%s][%s][%s] ", packageName, brand, sdk, serialno, abi)
@@ -213,7 +230,7 @@ func main() {
 					}
 					fmt.Printf("%s", message)
 				} else {
-					fmt.Printf(indent, tag)
+					tagColor.Printf(indent, tag)
 					c := line.PriorityColor()
 					c.Printf("%s", prio)
 					fmt.Printf(" %s", message)
