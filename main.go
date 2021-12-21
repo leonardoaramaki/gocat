@@ -72,6 +72,10 @@ func main() {
 	flag.BoolVar(&usb, "d", false, "")
 	flag.BoolVar(&usb, "dev", false, "")
 
+	// current focused app
+	var current bool
+	flag.BoolVar(&current, "current", false, "")
+
 	flag.Usage = func() {
 		h := "Filter logcat by package name\n\n"
 
@@ -85,7 +89,8 @@ func main() {
 		h += "	-i, --ignore <tag>           Ignore messages with specified tag\n"
 		h += "	-e --emu                     Use first emulator (adb -e)\n"
 		h += "	-d --dev                     Use first device (adb -d)\n"
-		h += "	-cp                          Copy & paste friendly format\n\n"
+		h += "	-cp                          Copy & paste friendly format\n"
+		h += "	--current                    Filter by current application\n\n"
 
 		h += "Examples:\n"
 		h += "	gocat -p com.example.app -i EGL_emulation -i System\n"
@@ -107,6 +112,21 @@ func main() {
 	}
 
 	devices := strings.Join(d, " ")
+
+	if current {
+		adb.Run(devices, func(o string) {
+			if len(o) > 0 {
+				splits := strings.Split(o, "/")
+				if len(splits) > 0 {
+					s := splits[0]
+					splits = strings.Split(s, " ")
+					if len(splits) > 0 {
+						packageName = splits[len(splits)-1]
+					}
+				}
+			}
+		}, `dumpsys activity activities | grep mFocusedWindow`)
+	}
 
 	// id of the process running given application if any
 	pid := pidOf(packageName, devices)

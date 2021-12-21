@@ -42,6 +42,7 @@ Options:
 	-e --emu                     Use first emulator (adb -e)
 	-d --dev                     Use first device (adb -d)
 	-cp                          Copy & paste friendly format
+    --current                    Filter by current application
 
 Examples:
 	gocat -p com.example.app -i EGL_emulation -i System
